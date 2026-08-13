@@ -1,4 +1,6 @@
 .env
+CONTEXT_*.md
+REAL_WORLD_CHALLENGES.txt
 __pycache__/
 *.pyc
 *.pyo
