@@ -136,19 +136,22 @@ Hospital Node State                    Orchestrates FL execution
 
 ```text
 fedmed/
-├── api/              # FastAPI backend (orchestrator)
-├── client/           # Flower clients + data loaders
-├── config/           # Pydantic settings from .env
+├── backend/          # Backend microservices and ML logic
+│   ├── api/          # FastAPI backend (orchestrator)
+│   ├── client/       # Flower clients + data loaders
+│   ├── config/       # Pydantic settings from .env
+│   ├── server/       # Flower FL server + FedAvg strategy
+│   ├── shared/       # Shared PyTorch models + exceptions
+│   ├── tests/        # pytest test suite
+│   ├── Dockerfile.*  # Service container configurations
+│   └── requirements.txt
+├── docs/             # Technical documentation and research context
 ├── frontend/         # React + Vite + TailwindCSS dashboard
 │   ├── src/
 │   │   ├── api/
 │   │   ├── components/
 │   │   └── pages/
-├── server/           # Flower FL server + FedAvg strategy
-├── shared/           # Shared PyTorch models + exceptions
-├── tests/            # pytest test suite
 ├── docker-compose.yml
-├── requirements.txt
 └── README.md
 ```
 
