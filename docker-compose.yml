@@ -4,7 +4,7 @@ services:
   # 1. FastAPI Backend (Orchestrator)
   api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.api
     ports:
       - "8000:8000"
@@ -21,14 +21,14 @@ services:
         limits:
           memory: 4g
     volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./models:/app/models
-      - ./api:/app/api
-      - ./client:/app/client
-      - ./server:/app/server
-      - ./shared:/app/shared
-      - ./config:/app/config
+      - ./backend/logs:/app/logs
+      - ./backend/data:/app/data
+      - ./backend/models:/app/models
+      - ./backend/api:/app/api
+      - ./backend/client:/app/client
+      - ./backend/server:/app/server
+      - ./backend/shared:/app/shared
+      - ./backend/config:/app/config
     # V20 FIX: Health check for container orchestration
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
