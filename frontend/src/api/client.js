@@ -1,13 +1,19 @@
 import axios from 'axios';
 
-// Vite env vars use import.meta.env.VITE_* — NEVER process.env.REACT_APP_*
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative path so Vite's dev proxy (vite.config.js) handles routing to the backend.
+// In production (behind nginx), the same relative path is reverse-proxied.
+// Only fall back to a full URL if VITE_API_URL is explicitly set.
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+
+// API key — must match the backend's SECRET_KEY in .env
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 const apiClient = axios.create({
-  baseURL: `${API_BASE}/api/v1`,
-  timeout: 10000,
+  baseURL: API_BASE,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
   },
 });
 
@@ -15,7 +21,8 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    const msg = error.response?.data?.detail || error.response?.data?.error || error.message;
+    console.error('API Error:', msg);
     return Promise.reject(error);
   }
 );
@@ -56,7 +63,8 @@ export const stopTraining = () => apiClient.post('/stop-training');
 export const getModelInfo = () => apiClient.get('/model-info');
 
 /**
- * GET /health
+ * GET /api/v1/health
  * Returns: { success, message, data: { api, disk_write } }
  */
 export const getHealth = () => apiClient.get('/health');
+
