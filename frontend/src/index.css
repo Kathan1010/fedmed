@@ -2,12 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base Layer ─── */
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-dark-900 text-gray-100 antialiased;
+    /* Light mode defaults */
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Dark mode overrides */
+  html.dark body {
+    @apply bg-zinc-950 text-zinc-100;
+  }
+
+  /* Custom Scrollbar - Light */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  /* Custom Scrollbar - Dark */
+  html.dark ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-700 rounded-full;
+  }
+  html.dark ::-webkit-scrollbar-thumb:hover {
+    @apply bg-zinc-600;
+  }
+
+  * {
+    scrollbar-width: thin;
   }
 }
 
-.glass-panel {
-  @apply bg-dark-800/80 backdrop-blur-md border border-white/10 shadow-xl;
+/* ─── Component Layer ─── */
+@layer components {
+
+  /* Glass Panels */
+  .glass-panel {
+    @apply bg-white border border-gray-200 shadow-sm rounded-2xl;
+  }
+  html.dark .glass-panel {
+    @apply bg-zinc-900 border-zinc-800 shadow-xl;
+  }
+
+  .glass-panel-subtle {
+    @apply bg-gray-50/80 border border-gray-200 rounded-xl;
+  }
+  html.dark .glass-panel-subtle {
+    @apply bg-zinc-800/50 border-zinc-700;
+  }
+
+  /* Interactive Cards */
+  .card-interactive {
+    @apply glass-panel transition-all duration-300;
+  }
+  .card-interactive:hover {
+    @apply shadow-md transform -translate-y-px border-gray-300;
+  }
+  html.dark .card-interactive:hover {
+    @apply shadow-2xl border-zinc-700;
+  }
+
+  /* Sidebar Nav Link (Always dark theme as per design) */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-[20px] text-zinc-400 
+           transition-all duration-200 text-sm font-medium;
+  }
+
+  .nav-link:hover {
+    @apply text-zinc-200 bg-white/5;
+  }
+
+  .nav-link-active {
+    @apply text-white bg-white/10 border border-white/10 shadow-sm;
+  }
+
+  /* Status Indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-dot-idle {
+    @apply status-dot bg-gray-400 dark:bg-zinc-500;
+  }
+  .status-dot-training {
+    @apply status-dot bg-black dark:bg-white animate-pulse;
+  }
+  .status-dot-completed {
+    @apply status-dot bg-gray-600 dark:bg-zinc-300;
+  }
+
+  /* Skeleton Loading */
+  .skeleton {
+    @apply relative overflow-hidden bg-gray-200 dark:bg-zinc-800 rounded;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  html.dark .skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+  }
+}
+
+/* ─── Utility Layer ─── */
+@layer utilities {
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+
+  .custom-tooltip {
+    @apply bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-lg rounded-xl px-4 py-3 text-sm;
+  }
 }

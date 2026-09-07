@@ -1,219 +1,229 @@
-# FedMed — Federated Learning for Privacy-Preserving Healthcare Analytics
+<h1 align="center">FedMed — Healthcare Federated Learning</h1>
 
-A federated learning framework where 3 simulated hospitals collaboratively train a shared neural network **without sharing raw patient data**. Only model weights are transmitted — raw data never leaves each hospital.
+<p align="center">
+  <strong>Privacy-Preserving Healthcare Analytics at the Edge</strong><br/>
+</p>
 
----
-
-## Architecture
-
-```
-┌─────────────┐    weights    ┌─────────────────────────────┐
-│  Hospital 1 │──────────────▶│                             │
-│  (Client 0) │◀──────────────│     FedMed FL Server        │
-└─────────────┘               │   (FedAvg Aggregation)      │
-                              │                             │
-┌─────────────┐    weights    │   logs/metrics.json         │
-│  Hospital 2 │──────────────▶│                             │
-│  (Client 1) │◀──────────────└──────────────┬──────────────┘
-└─────────────┘                              │ read
-                                             ▼
-┌─────────────┐               ┌─────────────────────────────┐
-│  Hospital 3 │──────────────▶│      FastAPI Backend        │
-│  (Client 2) │◀──────────────│   localhost:8000            │
-└─────────────┘               └──────────────┬──────────────┘
-                                             │ HTTP
-                                             ▼
-                              ┌─────────────────────────────┐
-                              │     React Dashboard         │
-                              │   localhost:3000            │
-                              └─────────────────────────────┘
-NOTE: Raw patient data never leaves each hospital.
-Only model weights are transmitted.
-```
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Flower-FL_Framework-F6D365?logo=flower&logoColor=black"/>
+  <img src="https://img.shields.io/badge/PyTorch-ML-EE4C2C?logo=pytorch&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black"/>
+  <img src="https://img.shields.io/badge/TailwindCSS-Styling-38B2AC?logo=tailwind-css&logoColor=white"/>
+</p>
 
 ---
 
-## Tech Stack
+## 1. What Is New (Latest Features)
 
-| Layer | Technology | Version |
-|---|---|---|
-| FL Framework | Flower | 1.7.0 |
-| ML Framework | PyTorch | 2.2.0 |
-| Backend API | FastAPI | 0.110.0 |
-| API Server | Uvicorn | 0.29.0 |
-| Data Validation | Pydantic | 2.6.0 |
-| Frontend | React (Vite) | 18.x |
-| Styling | TailwindCSS | 3.x |
-| Charts | Recharts | 2.x |
-| Containerization | Docker + docker-compose | latest |
+The README has been updated for the latest product behavior across the new frontend and backend integration.
+
+- Fully refactored **Enterprise Monochrome Theme** interface combining high-contrast usability with medical UI design language.
+- Added hybrid **Light / Dark Mode toggle** allowing clinicians to seamlessly switch viewing states while retaining accurate data visualization.
+- Embedded **Data Distribution Analytics**: New pie and donut charts visualize age demographics and gender ratios without exposing raw underlying datasets.
+- Embedded **Real-time System Health Monitoring**: A live area chart monitors simulated CPU and GPU utilization across all connected hospital nodes during active federated training.
+- Dynamic Recharts rendering ensuring colors adapt flawlessly between themes to highlight active network states.
 
 ---
 
-## Supported Data Types
+## 2. System Purpose
 
-| Data Type | Model | Dataset | Input Shape | Classes |
-|---|---|---|---|---|
-| `imaging` | CNN (Conv2d) | BloodMNIST (real) | (3, 28, 28) | 8 blood cell types |
-| `ehr` | MLP + BatchNorm | UCI Heart Disease (real) | (13,) | 2 (disease yes/no) |
-| `lab` | MLP | Breast Cancer Wisconsin (real) | (30,) | 2 (malignant/benign) |
-| `genomic` | 1D CNN (Conv1d) | Synthetic DNA sequences | (4, 200) | 2 (mutation yes/no) |
-| `wearable` | BiLSTM | Synthetic sensor data | (60, 5) | 3 (normal/arrhythmia/fall) |
+FedMed is a federated learning framework where multiple simulated hospital clients collaboratively train a shared neural network **without sharing raw patient data**. Only model weights are transmitted — raw data never leaves each hospital's localized environment.
 
----
+Core goals:
+- Protect raw clinical datasets (imaging, EHR, genomics) in compliance with privacy regulations.
+- Train highly accurate, generalized ML models across disparate data silos.
+- Provide a clear, transparent, and beautiful dashboard to monitor network state and model convergence in real-time.
 
-## Prerequisites
-
-- Python 3.10+
-- Node.js 20+
-- Docker & docker-compose (for containerized setup)
+This system is a simulation framework for federated training dynamics and is designed to demonstrate decentralized AI capabilities in healthcare.
 
 ---
 
-## Setup with Docker (Recommended)
+## 3. Architecture Overview
 
-```bash
-# 1. Clone the repository
-git clone <repo-url> && cd fedmed
+### 3.1 High-level Diagram (Text)
 
-# 2. Copy environment file and set your secret key
-cp .env.example .env
-# Edit .env — set SECRET_KEY and VITE_API_KEY
-
-# 3. Start all services
-docker compose up --build
-
-# 4. Open the dashboard
-# → http://localhost:3000 (frontend)
-# → http://localhost:8000/api/docs (API docs)
+```text
+Frontend (React)                       Backend (FastAPI)
+------------------                     -----------------------------
+Dashboard UI                 --->      /api/v1/start-training
+Real-time Metrics            <---      /api/v1/status
+Hospital Node State                    Orchestrates FL execution
+                                              |
+                                              v
+                               FedMed FL Server (Flower)
+                               (FedAvg Aggregation Strategy)
+                                              |
+      ┌───────────────────────────────────────┼───────────────────────────────────────┐
+      │                                       │                                       │
+      v                                       v                                       v
+┌─────────────┐                         ┌─────────────┐                         ┌─────────────┐
+│  Hospital 1 │      weights            │  Hospital 2 │      weights            │  Hospital 3 │
+│  (Client 0) │ ◀─────────────────────▶ │  (Client 1) │ ◀─────────────────────▶ │  (Client 2) │
+└─────────────┘                         └─────────────┘                         └─────────────┘
+  Local Data                              Local Data                              Local Data
+  (Never leaves)                          (Never leaves)                          (Never leaves)
 ```
 
 ---
 
-## Setup without Docker (Manual)
+## 4. Frontend Features
 
-```bash
-# 1. Create virtual environment
-python -m venv .venv
-.venv\Scripts\activate      # Windows
-source .venv/bin/activate   # Linux/macOS
+### 4.1 Dashboard Analytics
+- Real-time display of Global Model Accuracy, Loss metrics, and Training Rounds.
+- Dynamic Data Distribution demographics for network-level metadata insights.
+- Live progress bars indicating active round status.
 
-# 2. Install dependencies
-pip install -r requirements.txt
+### 4.2 Network Topology & Health
+- Visual node map illustrating the connection between the Aggregator server and decentralized Hospitals.
+- Real-time System Health Monitor displaying live multi-line CPU/GPU hardware utilization across edge devices.
+- Network routing lines illuminate in blue to indicate active weight transfers during training.
 
-# 3. Copy environment file
-cp .env.example .env
-# Edit .env — set SECRET_KEY and VITE_API_KEY
+### 4.3 Results & Performance
+- Bar charts breaking down individual hospital performance against the global model average, highlighting any data biases.
+- Transparent "Privacy Inspector" modal proving that no raw Patient IDs or identifiers are ever transmitted.
 
-# 4. Start the API (orchestrates server + clients)
-python -m api.main
-
-# 5. Start the frontend (in a new terminal)
-cd frontend && npm install && npm run dev
-```
+### 4.4 Theming
+- Native Dark/Light mode utilizing Tailwind `dark:` classes and a persistent React `ThemeContext`.
 
 ---
 
-## Environment Variables
+## 5. Backend Features
 
-| Variable | Description | Default |
-|---|---|---|
-| `FL_SERVER_HOST` | Flower server bind address | `localhost` |
-| `FL_SERVER_PORT` | Flower gRPC port | `8080` |
-| `API_HOST` | FastAPI bind address | `0.0.0.0` |
-| `API_PORT` | FastAPI HTTP port | `8000` |
-| `NUM_ROUNDS` | Number of FL rounds | `10` |
-| `NUM_CLIENTS` | Number of hospital clients | `3` |
-| `LOCAL_EPOCHS` | Training epochs per round | `2` |
-| `BATCH_SIZE` | Training batch size | `32` |
-| `LEARNING_RATE` | Adam optimizer LR | `0.001` |
-| `DATA_TYPE` | Default data type | `imaging` |
-| `SECRET_KEY` | API authentication key | **change this** |
-| `LOG_LEVEL` | Logging level | `INFO` |
-| `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:3000` |
+### 5.1 API Layer
+- Fast, async-driven FastAPI orchestrator that securely links the frontend to the backend training processes.
+- Endpoints to start/stop training, fetch live logs, and read metrics.json output generated by the server.
+
+### 5.2 Federated Learning (FL) Pipeline
+- Built on the robust **Flower (flwr)** framework utilizing the `FedAvg` (Federated Averaging) strategy.
+- 5 distinctly different Neural Network architectures designed to handle diverse medical data types (Images, Genomics, Wearables, EHRs).
+- Defensive strategy implementation gracefully handling client failures mid-round.
+
+### 5.3 Safety Guardrails
+- **Gradient Clipping:** Prevents exploding gradients during training `clip_grad_norm_(max_norm=1.0)`.
+- **Dropout:** Mitigates overfitting on smaller, localized hospital datasets.
+- **Poisoning Defenses:** Norm-clipping on client updates before they reach the central aggregator.
 
 ---
 
-## API Documentation
+## 6. End-to-End Data Flow
 
-Interactive API docs available at: **http://localhost:8000/api/docs**
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/healthz` | GET | Unauthenticated health probe |
-| `/api/v1/health` | GET | Health check with disk write test |
-| `/api/v1/status` | GET | Training status (idle/training/completed) |
-| `/api/v1/metrics` | GET | Per-round accuracy, loss, client metrics |
-| `/api/v1/start-training` | POST | Start FL training session |
-| `/api/v1/stop-training` | POST | Stop running training |
-| `/api/v1/model-info` | GET | Model architecture and parameter count |
-
-All endpoints except `/healthz` require `X-API-Key` header.
+1. User clicks "Start Training" in the React frontend.
+2. FastAPI backend orchestrator receives the signal and spawns the Flower FL Server and 3 Client processes.
+3. The Server issues the initial global model weights to all Clients.
+4. Each Hospital Client trains the model on its **local, private dataset** for a set number of epochs.
+5. Clients send their updated *weights* (not data) back to the Server.
+6. The Server aggregates the weights using `FedAvg` to form a smarter global model, logs the metrics, and triggers the next round.
+7. Frontend periodically polls the API, updating the Loss/Accuracy charts and UI dynamically.
 
 ---
 
-## Running Tests
+## 7. Technology Stack
 
-```bash
-# Run all tests
-python -m pytest tests/ -v
-
-# Run specific test file
-python -m pytest tests/test_train.py -v
-python -m pytest tests/test_data_loader.py -v
-python -m pytest tests/test_api.py -v
-```
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, TailwindCSS, Recharts, Lucide Icons |
+| API | FastAPI, Uvicorn |
+| ML Framework | PyTorch (v2.x) |
+| FL Framework | Flower (flwr v1.7.x) |
+| Data Processing | NumPy, Pandas, Scikit-learn, MedMNIST |
+| Containerization | Docker + Docker Compose |
 
 ---
 
-## Project Structure
+## 8. Repository Structure
 
-```
+```text
 fedmed/
-├── server/           # Flower FL server + FedAvg strategy
-├── client/           # Flower clients + data loaders (5 types)
-├── api/              # FastAPI backend (orchestrator)
-├── shared/           # Shared models (5 architectures) + exceptions
-├── config/           # Pydantic settings from .env
+├── backend/          # Backend microservices and ML logic
+│   ├── api/          # FastAPI backend (orchestrator)
+│   ├── client/       # Flower clients + data loaders
+│   ├── config/       # Pydantic settings from .env
+│   ├── server/       # Flower FL server + FedAvg strategy
+│   ├── shared/       # Shared PyTorch models + exceptions
+│   ├── tests/        # pytest test suite
+│   ├── Dockerfile.*  # Service container configurations
+│   └── requirements.txt
+├── docs/             # Technical documentation and research context
 ├── frontend/         # React + Vite + TailwindCSS dashboard
-├── tests/            # pytest test suite
-├── data/             # Downloaded/generated datasets (gitignored)
-├── logs/             # Training metrics + app logs (gitignored)
-├── models/           # Saved model checkpoints (gitignored)
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   └── pages/
 ├── docker-compose.yml
-├── Dockerfile.api / .server / .client
-├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Real-World Challenges & Defenses
+## 9. Quick Start
 
-### Implemented
+### 9.1 Backend Setup (Manual)
 
-| Challenge | Defense | Location |
-|---|---|---|
-| Unequal data sizes | FedAvg weighted by sample count | Built into Flower FedAvg |
-| Exploding gradients | `clip_grad_norm_(max_norm=1.0)` | `client/train.py` |
-| Client failures mid-round | Defensive metric access, skip incomplete | `server/strategy.py` |
-| Model poisoning | Norm-clipping on client updates | `server/strategy.py` |
-| Hospital monitoring | Per-client accuracy logged each round | `server/strategy.py` |
-| Raw data privacy | Core FL design — only weights transmitted | Entire architecture |
-| Overfitting on small data | Dropout in all models | `shared/models/` |
+```bash
+# 1. Create and activate a virtual environment
+python -m venv .venv
+.\.venv\Scripts\activate      # Windows
+source .venv/bin/activate     # Linux/macOS
 
-### Future Scope
+# 2. Install dependencies
+pip install -r requirements.txt
 
-| Challenge | Defense | Path |
-|---|---|---|
-| Non-IID / biased data | FedProx (proximal term) | Swap FedAvg → FedProx |
-| Privacy from weights | Differential Privacy (Opacus) | Wrap optimizer in train.py |
-| Server seeing weights | Secure Aggregation | flwr SecAgg protocol |
-| Poisoned updates | Byzantine-robust (Krum, Trimmed Mean) | Custom aggregate_fit |
-| Slow hospitals | Async FL | FedAsync strategy |
-| HIPAA/GDPR compliance | Audit logging, consent tracking | Extend logs/ |
+# 3. Create environment file (copy .env.example if available)
+# Set your SECRET_KEY inside the .env
+
+# 4. Start the FastAPI orchestrator
+python -m api.main
+```
+Backend API will be live at: http://localhost:8000
+
+### 9.2 Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Dashboard will be live at: http://localhost:3000
 
 ---
 
-## License
+## 10. Required Environment Variables
 
-MIT
+### 10.1 Backend (`.env`)
+
+- `SECRET_KEY` (Required for API Authentication)
+- `FL_SERVER_HOST` (Default: localhost)
+- `FL_SERVER_PORT` (Default: 8080)
+- `API_HOST` (Default: 0.0.0.0)
+- `API_PORT` (Default: 8000)
+- `NUM_ROUNDS` (Default: 10)
+- `NUM_CLIENTS` (Default: 3)
+- `DATA_TYPE` (Default: imaging)
+
+### 10.2 Frontend (`frontend/.env`)
+
+- `VITE_API_URL` (Default: http://localhost:8000/api/v1)
+- `VITE_API_KEY` (Must match backend SECRET_KEY)
+
+---
+
+## 11. Key Endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/healthz` | Unauthenticated health probe |
+| GET | `/api/v1/health` | Service health and disk write check |
+| GET | `/api/v1/status` | Current training status (idle/training) |
+| GET | `/api/v1/metrics` | Fetches aggregated loss, accuracy, and client stats |
+| POST| `/api/v1/start-training` | Triggers FL orchestration |
+| POST| `/api/v1/stop-training` | Kills running training processes |
+
+---
+
+## 12. Operational Notes
+
+- Ensure `VITE_API_KEY` in the frontend strictly matches `SECRET_KEY` in the backend, or all POST requests will throw 401 Unauthorized errors.
+- Training requires significant CPU/RAM depending on the `DATA_TYPE`. If testing locally, ensure you have sufficient memory to run 3 concurrent PyTorch instances.
+- The `logs/metrics.json` file is overwritten at the start of every new training session.
