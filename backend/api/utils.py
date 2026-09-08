@@ -130,20 +130,28 @@ class TrainingProcessManager:
         """Kill a process and all its children, then reap to prevent zombies."""
         try:
             if proc.poll() is None:
-                parent = psutil.Process(proc.pid)
-                children = parent.children(recursive=True)
-                for child in children:
-                    try:
-                        child.kill()
-                    except psutil.NoSuchProcess:
-                        pass
-                parent.kill()
-                # V26 FIX: Wait for process to be reaped (prevent zombie)
-                parent.wait(timeout=5)
-        except psutil.NoSuchProcess:
-            pass
-        except psutil.TimeoutExpired:
-            logger.warning(f"Process {proc.pid} did not exit within 5s after kill")
+                pid = proc.pid
+                # On Windows, use taskkill /F /T for reliable process tree kill
+                import platform
+                if platform.system() == "Windows":
+                    subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(pid)],
+                        capture_output=True, timeout=10
+                    )
+                else:
+                    parent = psutil.Process(pid)
+                    children = parent.children(recursive=True)
+                    for child in children:
+                        try:
+                            child.kill()
+                        except psutil.NoSuchProcess:
+                            pass
+                    parent.kill()
+                    parent.wait(timeout=5)
+        except (psutil.NoSuchProcess, psutil.TimeoutExpired, subprocess.TimeoutExpired):
+            logger.warning(f"Process {proc.pid} cleanup had issues, but proceeding")
+        except Exception as e:
+            logger.warning(f"Unexpected error killing process {proc.pid}: {e}")
         finally:
             # Also call Popen.wait() to clean up Python-side resources
             try:

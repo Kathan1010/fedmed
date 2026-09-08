@@ -16,8 +16,16 @@ MAX_UPDATE_NORM = 10.0
 
 class FedMedStrategy(fl.server.strategy.FedAvg):
     """Custom FedAvg strategy with poisoning defense and anomaly logging."""
-    
-    # V17 FIX: Clip client updates by norm to limit model poisoning impact
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Latest aggregated global weights, used as the reference point for
+        # computing per-client update deltas. None until the first round completes.
+        self._global_weights: Optional[List[np.ndarray]] = None
+
+    # V17 FIX: Clip client update DELTAS by L2 norm to limit model poisoning impact.
+    # Deltas (client_weights - global_weights) are clipped, not absolute weights,
+    # so a legitimately large model norm is never scaled down.
     def aggregate_fit(
         self,
         server_round: int,
@@ -26,32 +34,42 @@ class FedMedStrategy(fl.server.strategy.FedAvg):
     ):
         if not results:
             return super().aggregate_fit(server_round, results, failures)
-        
+
         # GAP 18 FIX: Log client failures
         if failures:
             logger.warning(f"Round {server_round}: {len(failures)} client(s) failed during fit")
-        
-        clipped_results = []
-        for client_proxy, fit_res in results:
-            params = fl.common.parameters_to_ndarrays(fit_res.parameters)
-            total_norm = sum(float(np.linalg.norm(p)) for p in params)
-            
-            if total_norm > MAX_UPDATE_NORM:
-                logger.warning(
-                    f"Round {server_round}: Client update norm {total_norm:.2f} exceeds "
-                    f"max {MAX_UPDATE_NORM}. Clipping."
-                )
-                scale = MAX_UPDATE_NORM / total_norm
-                params = [p * scale for p in params]
-                fit_res = fl.common.FitRes(
-                    parameters=fl.common.ndarrays_to_parameters(params),
-                    num_examples=fit_res.num_examples,
-                    metrics=fit_res.metrics,
-                    status=fit_res.status,
-                )
-            clipped_results.append((client_proxy, fit_res))
-        
-        return super().aggregate_fit(server_round, clipped_results, failures)
+
+        # Round 1 has no prior global reference — aggregate as-is and record it.
+        if self._global_weights is not None:
+            clipped_results = []
+            for client_proxy, fit_res in results:
+                params = fl.common.parameters_to_ndarrays(fit_res.parameters)
+                delta = [p - g for p, g in zip(params, self._global_weights)]
+                delta_norm = float(np.sqrt(sum(float(np.sum(d * d)) for d in delta)))
+
+                if delta_norm > MAX_UPDATE_NORM:
+                    logger.warning(
+                        f"Round {server_round}: Client update norm {delta_norm:.2f} exceeds "
+                        f"max {MAX_UPDATE_NORM}. Clipping."
+                    )
+                    scale = MAX_UPDATE_NORM / delta_norm
+                    params = [g + d * scale for g, d in zip(self._global_weights, delta)]
+                    fit_res = fl.common.FitRes(
+                        parameters=fl.common.ndarrays_to_parameters(params),
+                        num_examples=fit_res.num_examples,
+                        metrics=fit_res.metrics,
+                        status=fit_res.status,
+                    )
+                clipped_results.append((client_proxy, fit_res))
+            results = clipped_results
+
+        aggregated_params, aggregated_metrics = super().aggregate_fit(server_round, results, failures)
+
+        # Record the new global weights as the reference for next round's delta clipping.
+        if aggregated_params is not None:
+            self._global_weights = fl.common.parameters_to_ndarrays(aggregated_params)
+
+        return aggregated_params, aggregated_metrics
 
     def aggregate_evaluate(
         self,

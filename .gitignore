@@ -8,9 +8,10 @@ __pycache__/
 .Python
 *.pt
 *.pth
+# Runtime artifacts (any location, e.g. backend/data, backend/logs, backend/models)
 data/
-logs/*.json
-logs/*.log
+logs/
+models/
 node_modules/
 build/
 dist/

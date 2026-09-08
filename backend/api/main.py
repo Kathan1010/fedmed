@@ -7,9 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import APIKeyHeader
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from api.limiter import limiter
 from api.routes import router
 from api.utils import process_manager
 from config.config import get_settings
@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Load settings
 settings = get_settings()
-
-# --- V4 FIX: Rate Limiting ---
-limiter = Limiter(key_func=get_remote_address)
 
 
 # --- GAP 11 FIX: Lifespan handler for startup/shutdown ---

@@ -64,8 +64,9 @@ export default function Dashboard() {
     setActionLoading(true);
     try {
       await stopTraining();
+      // Force status to idle immediately so UI reflects the stop
+      setStatus(prev => ({ ...prev, status: 'idle', connected_clients: 0 }));
       setError(null);
-      await fetchData();
     } catch (err) {
       setError('Failed to stop training');
     } finally {

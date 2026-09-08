@@ -10,27 +10,41 @@ def load_imaging_data(client_id: int) -> tuple[DataLoader, DataLoader]:
     data_dir = "data"
     os.makedirs(data_dir, exist_ok=True)
 
-    data_transform = transforms.Compose([
+    # Data augmentation for training — geometric only. Blood cells are orientation-
+    # invariant, so flips/rotation help; color jitter is omitted because stain hue is
+    # a key class signal and perturbing it hurts discrimination.
+    train_transform = transforms.Compose([
+        transforms.Resize(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(15),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[.5], std=[.5])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    # No augmentation for test — clean evaluation
+    test_transform = transforms.Compose([
+        transforms.Resize(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
     # BloodMNIST automatically downloads if download=True
-    train_dataset = BloodMNIST(split="train", download=True, root=data_dir, transform=data_transform)
-    test_dataset = BloodMNIST(split="test", download=True, root=data_dir, transform=data_transform)
+    train_dataset = BloodMNIST(split="train", download=True, root=data_dir, transform=train_transform)
+    test_dataset = BloodMNIST(split="test", download=True, root=data_dir, transform=test_transform)
 
-    # Split training set into 3 equal partitions (capped for speed)
+    # Split training set into equal partitions across clients
     total_train = len(train_dataset)
     partition_size_train = total_train // settings.num_clients
     start_idx_train = client_id * partition_size_train
-    end_idx_train = start_idx_train + min(partition_size_train, 500)
+    end_idx_train = start_idx_train + partition_size_train
     train_subset = Subset(train_dataset, range(start_idx_train, end_idx_train))
 
-    # Split test set into 3 equal partitions (capped for speed)
+    # Split test set into equal partitions across clients
     total_test = len(test_dataset)
     partition_size_test = total_test // settings.num_clients
     start_idx_test = client_id * partition_size_test
-    end_idx_test = start_idx_test + min(partition_size_test, 100)
+    end_idx_test = start_idx_test + partition_size_test
     test_subset = Subset(test_dataset, range(start_idx_test, end_idx_test))
 
     from client.data_loaders.registry import get_loader_kwargs

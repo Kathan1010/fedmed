@@ -162,18 +162,21 @@ fedmed/
 ### 9.1 Backend Setup (Manual)
 
 ```bash
-# 1. Create and activate a virtual environment
+# 1. Enter the backend directory
+cd backend
+
+# 2. Create and activate a virtual environment
 python -m venv .venv
 .\.venv\Scripts\activate      # Windows
 source .venv/bin/activate     # Linux/macOS
 
-# 2. Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 3. Create environment file (copy .env.example if available)
+# 4. Create environment file (copy ../.env.example if available)
 # Set your SECRET_KEY inside the .env
 
-# 4. Start the FastAPI orchestrator
+# 5. Start the FastAPI orchestrator
 python -m api.main
 ```
 Backend API will be live at: http://localhost:8000

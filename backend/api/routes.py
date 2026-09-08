@@ -8,6 +8,7 @@ from api.models import (
     StatusResponse, ModelInfoResponse, ErrorResponse,
 )
 from api.utils import process_manager, read_metrics_file, calculate_model_size
+from api.limiter import limiter
 from config.config import get_settings
 from shared.models.registry import get_model
 from filelock import FileLock
@@ -43,10 +44,12 @@ async def get_status():
     is_running = process_manager.check_status()
 
     num_completed = len(rounds)
-    if num_completed >= settings.num_rounds and not is_running:
-        status = "completed"
-    elif is_running or num_completed > 0:
+    if is_running:
         status = "training"
+    elif num_completed > 0:
+        # Any completed rounds (whether all rounds finished or training was
+        # stopped early) count as a completed session.
+        status = "completed"
     else:
         status = "idle"
 
@@ -80,18 +83,19 @@ async def get_metrics():
 
 
 @router.post("/start-training", response_model=GenericResponse)
-async def start_training(request: TrainingRequest, background_tasks: BackgroundTasks):
+@limiter.limit("10/minute")
+async def start_training(request: Request, payload: TrainingRequest, background_tasks: BackgroundTasks):
     """Starts a federated learning session."""
     if not _start_lock.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="Training start already in progress.")
     try:
         if process_manager.check_status():
             raise HTTPException(status_code=409, detail="Training is already running.")
-        background_tasks.add_task(_start_with_lock, request.data_type, request.num_rounds)
+        background_tasks.add_task(_start_with_lock, payload.data_type, payload.num_rounds)
     except Exception:
         _start_lock.release()
         raise
-    return GenericResponse(success=True, message=f"Training started for {request.data_type}")
+    return GenericResponse(success=True, message=f"Training started for {payload.data_type}")
 
 
 def _start_with_lock(data_type: str, num_rounds: int = None):
@@ -103,7 +107,8 @@ def _start_with_lock(data_type: str, num_rounds: int = None):
 
 
 @router.post("/stop-training", response_model=GenericResponse)
-async def stop_training():
+@limiter.limit("10/minute")
+async def stop_training(request: Request):
     """Stops a running federated learning session."""
     if not process_manager.check_status():
         return GenericResponse(success=True, message="Training was not running.")
