@@ -3,7 +3,8 @@ import torch.nn as nn
 
 class GenomicModel(nn.Module):
     """1D CNN for genomic sequence classification.
-    Simulated with synthetic one-hot encoded DNA sequences (4 channels × 200 length → 2 classes).
+    Synthetic one-hot DNA sequences (4 channels × 200 length → 2 classes) where the
+    classes differ by base composition (a distributed statistical signal).
 
     Architecture: Conv1d → ReLU → MaxPool → Conv1d → ReLU → AdaptiveAvgPool →
                   Flatten → Linear → ReLU → Dropout → Linear
@@ -17,6 +18,9 @@ class GenomicModel(nn.Module):
             nn.MaxPool1d(2),
             nn.Conv1d(32, 64, kernel_size=5, padding=2),
             nn.ReLU(),
+            # Average-pool: the class signal is base *composition* (a distributed,
+            # statistical property), so averaging conv activations over the sequence
+            # is the right summary and gives stable, graceful training.
             nn.AdaptiveAvgPool1d(10),
         )
         self.classifier = nn.Sequential(

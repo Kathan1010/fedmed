@@ -19,14 +19,18 @@ def load_wearable_data(client_id: int) -> tuple[DataLoader, DataLoader]:
     X = rng.standard_normal((num_samples, timesteps, sensors))
     y = rng.integers(0, 3, num_samples) # 3 classes
     
-    # Inject patterns based on class
+    # Inject class patterns at moderate amplitudes so the signals partially overlap
+    # the N(0,1) sensor noise. Strong amplitudes make the classes trivially separable
+    # (~98%); these values give a realistic Bayes-error ceiling of ~90%.
+    SINE_AMP = 1.3
+    SPIKE_AMP = 1.6
     for i in range(num_samples):
         if y[i] == 1:
-            # Class 1 pattern: high variance in sensor 0 (e.g. erratic heart rate)
-            X[i, :, 0] += np.sin(np.linspace(0, 10 * np.pi, timesteps)) * 2
+            # Class 1 pattern: oscillation in sensor 0 (e.g. erratic heart rate)
+            X[i, :, 0] += np.sin(np.linspace(0, 10 * np.pi, timesteps)) * SINE_AMP
         elif y[i] == 2:
             # Class 2 pattern: sudden spike in sensor 2 (e.g. fall detected)
-            X[i, timesteps//2:, 2] += 3.0
+            X[i, timesteps//2:, 2] += SPIKE_AMP
             
     # Train/test split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)

@@ -5,7 +5,7 @@ class EHRModel(nn.Module):
     """MLP for tabular EHR classification.
     Uses UCI Heart Disease (Cleveland) dataset (13 features → 2 classes).
 
-    Architecture: Linear(13, 64) → ReLU → BatchNorm → Dropout →
+    Architecture: Linear(13, 64) → ReLU → LayerNorm → Dropout →
                   Linear(64, 32) → ReLU → Dropout → Linear(32, 2)
     """
 
@@ -14,7 +14,9 @@ class EHRModel(nn.Module):
         self.network = nn.Sequential(
             nn.Linear(13, 64),   # 13 features from Heart Disease dataset
             nn.ReLU(),
-            nn.BatchNorm1d(64),
+            # LayerNorm (not BatchNorm): no running statistics for FedAvg to average
+            # incorrectly across clients, and stable with the small per-client batches.
+            nn.LayerNorm(64),
             nn.Dropout(0.3),
             nn.Linear(64, 32),
             nn.ReLU(),
